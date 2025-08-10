@@ -4,7 +4,7 @@ const authMiddleware = require("../MiddleWare/auth.middleware");
 
 const TodoRouter = express.Router();
 
-TodoRouter.post("/add-todo", authMiddleware, async (req, res) => {
+TodoRouter.post("/add-todo", authMiddleware("user"), async (req, res) => {
   try {
     let todo = await todoModel.create({ ...req.body, userId: req.user });
     res.status(200).json({ message: "Todo added successfuly", todo });
@@ -13,7 +13,7 @@ TodoRouter.post("/add-todo", authMiddleware, async (req, res) => {
   }
 });
 
-TodoRouter.get("/get-todo", authMiddleware, async (req, res) => {
+TodoRouter.get("/get-todo", authMiddleware("admin"), async (req, res) => {
   try {
     let todo = await todoModel.find({ userId: req.user });
     res.status(200).json({ message: "List of todos", todo });

@@ -12,8 +12,12 @@ connectToDB();
 app.use("/user", UserRouter);
 app.use("/todos", TodoRouter);
 
-app.get("/", (req, res) => {
-  res.json("request working successfully!!!");
+app.get("/test", (req, res) => {
+  res.json("Request working successfully!!!");
+});
+
+app.get("/login", (req, res) => {
+  res.json("Please try to login again.");
 });
 
 app.listen(PORT, () => {
