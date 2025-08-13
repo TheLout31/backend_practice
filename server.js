@@ -3,8 +3,10 @@ const connectToDB = require("./Config/mongodb.config");
 const UserRouter = require("./Routes/user.routes");
 const TodoRouter = require("./Routes/todo.routes");
 const app = express();
+const cors = require("cors");
 const PORT = 3000;
 
+app.use(cors());
 app.use(express.json());
 
 connectToDB();

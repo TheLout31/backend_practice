@@ -8,6 +8,7 @@ const UserRouter = express.Router();
 require("dotenv").config();
 var jwt = require("jsonwebtoken");
 const passport = require("passport");
+const nodemailer = require("nodemailer");
 const GitHubStrategy = require("passport-github2");
 
 UserRouter.post("/signup", (req, res) => {
@@ -86,5 +87,86 @@ UserRouter.get(
     res.json({ message: "Login Success!!!!!" });
   }
 );
+
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.GOOGLE_APP_EMAIL,
+    pass: process.env.GOOGLE_APP_PASSWORD,
+  },
+});
+
+UserRouter.get("/sendmail", async (req, res) => {
+  try {
+    const info = await transporter.sendMail({
+      from: '"NEMF Course" <NEMF@gmail.com>',
+      to: "20013434@niu.edu.in",
+      subject: "Email Test through node.js",
+      text: "Test 1", // plain‑text body
+      html: "<h1>Test 1</h1>", // HTML body
+    });
+
+    res.status(201).json({ message: "Email Send", data: info.messageId });
+  } catch (error) {
+    res.status(400).json({ message: "Error Sending Email" });
+  }
+});
+
+UserRouter.post("/forget-password", async (req, res) => {
+  try {
+    let { email } = req.body;
+    let user = await userModel.findOne({ email });
+    if (!user) {
+      res.status(404).json({ message: "User not Found!" });
+    } else {
+      let refreshToken = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET_KEY,
+        { expiresIn: 200 }
+      );
+      let resetPasswordLink = `http://localhost:3000/user/reset-password?token=${refreshToken}`;
+      // const info = await transporter.sendMail({
+      //   from: '"NEMF Course" <NEMF@gmail.com>',
+      //   to: "",
+      //   subject: "Email Test through node.js",
+      //   text: "Test 1", // plain‑text body
+      //   html: "<h1>Test 1</h1>", // HTML body
+      // });
+      res.status(201).json({ message: "Email Send", link: resetPasswordLink });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong. Try again" });
+  }
+});
+
+UserRouter.post("/reset-password", async (req, res) => {
+  try {
+    let { token } = req.query;
+    let { newPassword } = req.body;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
+    if (!decoded) {
+      res.status(403).json({ message: "Incorrect token try again" });
+    } else {
+      let user = await userModel.findById(decoded.userId);
+      // user.password = newPassword;
+      // await user.save();
+      bcrypt.hash(newPassword, saltRounds, async function (err, hash) {
+        // Store hash in your password DB.
+        if (err) {
+          res.status(500).json({ message: "Something went wrong" });
+        } else {
+          console.log("converted", newPassword, "to this ===>", hash);
+          user.password = hash;
+          await user.save();
+          res.status(201).json({ message: "Password Updated!" });
+        }
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong. Try again" });
+  }
+});
 
 module.exports = UserRouter;
